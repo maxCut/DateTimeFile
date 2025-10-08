@@ -35,7 +35,7 @@ char** getInputLines()
  * 
  * @Param index - the index of the datetime format we are checking validity for
  * @Param c - the character we are checking
- * @Param currentStep - the current dependent character(s) we have seen so far
+ * @Param lastChar - the previous character in the datetime string
  */
 bool checkCharValidForIndex(char c, int index, char lastChar)
 {
