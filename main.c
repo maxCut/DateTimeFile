@@ -6,6 +6,10 @@ int main(int arc, char *argv[]) {
     return 0;
 }
 
+/*
+* at its core this will use a hashmap or a set to store each unique datetime then skip 
+* duplicates.
+*/
 char** removeDuplicates(char** lines, int* lineCount)
 {
 
@@ -16,9 +20,9 @@ void writeOutputFile(char** lines, int lineCount)
 
 }
 
-char** getInputLines()
+char** parseInput()
 {
-
+    
 }
 
 /*
@@ -213,6 +217,4 @@ bool checkCharValidForIndex(char c, int index, char lastChar)
             return true;
         return false;
     }
-
-
 }
