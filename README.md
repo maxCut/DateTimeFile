@@ -24,4 +24,4 @@ Next Steps
 
 - having input and output files be passed in as commandline args. This would make it easier to use, and make it so the program doesnt need to be recopiled to update the input/output files.
 
-- using a regex parser to match the file format. This will make the code more readable.
+- using a regex parser to match the file format. This will make the code more readable. The regex is \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})? its not clear if thats more readable.
