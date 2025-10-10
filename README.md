@@ -23,3 +23,5 @@ Next Steps
 - Replacing the qsort implementation of filtering out duplicate date times with a hashset. This would improve performance, converting the step from O(nlogn) to O(n). 
 
 - having input and output files be passed in as commandline args. This would make it easier to use, and make it so the program doesnt need to be recopiled to update the input/output files.
+
+- using a regex parser to match the file format. This will make the code more readable.
