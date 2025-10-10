@@ -17,7 +17,7 @@ Precompile:
 
 Compile: gcc main.c
 
-Usage: run ./a.out
+Usage: ./a.exe
 
 Next Steps
 - Replacing the qsort implementation of filtering out duplicate date times with a hashset. This would improve performance, converting the step from O(nlogn) to O(n). 
