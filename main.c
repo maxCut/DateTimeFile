@@ -10,7 +10,7 @@ const char* inputFormatLong = "YYYY-MM-DDTHH:MM:SS+HH:MM";
 const char* inputFormatShort = "YYYY-MM-DDTHH:MM:SSZ";
 
 int main(int arc, char *argv[]) {
-    // Basic preprocessing 
+    // Basic preprocessing - this gets the needed info to dynamically allocate memory
     long fileSize = getFileSize();
     int biggestDateSize = strlen(inputFormatLong);
     int smallestDateSize = strlen(inputFormatShort);
@@ -22,6 +22,8 @@ int main(int arc, char *argv[]) {
 
     // write all unique dates to output file
     writeUniqueElementsToOutputFile(unfilteredDates, numDates);
+
+    // Free memory
     for (int i=0; i<numDates; i++)
     {
         free(unfilteredDates[i]);
