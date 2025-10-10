@@ -1,9 +1,20 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+
 const char* inputFile = "input.txt";
-int main(int arc, char *argv[]) {
-    printf("Hello, World!\n");
-    return 0;
+const char* outputFile = "output.txt";
+const char* inputFormatLong = "YYYY-MM-DDTHH:MM:SS+HH:MM";
+const char* inputFormatShort = "YYYY-MM-DDTHH:MM:SSZ";
+
+long getFileSize()
+{
+    FILE* file = fopen(inputFile, "r");
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    fclose(file);
+    return size;
 }
 
 /*
@@ -20,10 +31,6 @@ void writeOutputFile(char** lines, int lineCount)
 
 }
 
-char** parseInput()
-{
-    
-}
 
 /*
  * We are going to do a greedy algorithm.
@@ -217,4 +224,87 @@ bool checkCharValidForIndex(char c, int index, char lastChar)
             return true;
         return false;
     }
+}
+
+
+
+/*
+ * Read the file and return a list of strings, each string is a valid date.
+ * note: its unsorted and may contain duplicates, but each string is valid.
+*/
+int getListOfDatesFromFile(char** output, int biggestDateSize, int smallestDateSize)
+{
+    FILE* file = fopen(inputFile, "r");
+    char character;
+    char lastChar = '\0';
+    int index = 0;
+    int currentDateIndex = 0;
+    char* currentDate = malloc(biggestDateSize);
+    while ((character = fgetc(file)) != EOF)
+    {
+        if(checkCharValidForIndex(character, index, lastChar))
+        {
+            currentDate[index] = character;
+            // Valid character for this position
+            lastChar = character;
+            index++;
+            if(index==biggestDateSize || (index ==  smallestDateSize && lastChar == 'Z')) // Reached end of longest possible date
+            {   
+                currentDate[index] = '\0'; // Null terminate the string
+                output[currentDateIndex] = malloc(biggestDateSize);
+                sprintf(output[currentDateIndex], "%s", currentDate); // Store date in output array
+                index=0;
+                currentDateIndex++;
+                lastChar='\0';
+                // Store date in output array
+            }
+        }
+        else
+        {
+            // Invalid character for this position
+            index=0;
+            lastChar='\0';
+            if(checkCharValidForIndex(character, index, lastChar)) // Check if this character can be the start of a new date
+            {
+                lastChar = character;
+                index++;
+            }
+        }
+        // Process character
+    }
+    free(currentDate);
+    fclose(file);
+    return currentDateIndex; // Return number of dates found
+}
+int compareStrings(const void *a, const void *b) {
+    const char **str1 = (const char **)a;
+    const char **str2 = (const char **)b;
+    return strcmp(*str1, *str2);
+}
+ 
+int main(int arc, char *argv[]) {
+    long fileSize = getFileSize();
+    int biggestDateSize = strlen(inputFormatLong);
+    int smallestDateSize = strlen(inputFormatShort);
+    int maxDates = fileSize / smallestDateSize; // Worst case every date is the smallest size
+    char** unfilteredDates = malloc(maxDates * sizeof(char*));
+    int numDates = getListOfDatesFromFile(unfilteredDates, biggestDateSize, smallestDateSize);
+    qsort(unfilteredDates, numDates, sizeof(char*), compareStrings);
+    FILE* file = fopen(outputFile, "w");
+    for (int i=0; i<numDates; i++)
+    {
+        if(i>0 && strcmp(unfilteredDates[i], unfilteredDates[i-1])==0)
+        {
+            // Duplicate, skip
+            continue;
+        }
+        fprintf(file, "%s\n", unfilteredDates[i]);
+    }
+    fclose(file);
+    for (int i=0; i<numDates; i++)
+    {
+        free(unfilteredDates[i]);
+    }
+    free(unfilteredDates);
+    return 0;
 }
