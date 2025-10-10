@@ -2,50 +2,85 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include "main.h"
 
 const char* inputFile = "input.txt";
 const char* outputFile = "output.txt";
 const char* inputFormatLong = "YYYY-MM-DDTHH:MM:SS+HH:MM";
 const char* inputFormatShort = "YYYY-MM-DDTHH:MM:SSZ";
 
+int main(int arc, char *argv[]) {
+    // Basic preprocessing 
+    long fileSize = getFileSize();
+    int biggestDateSize = strlen(inputFormatLong);
+    int smallestDateSize = strlen(inputFormatShort);
+    int maxDates = fileSize / smallestDateSize; // Worst case every date is the smallest size
+
+    // Create an array of all dates that fit date format
+    char** unfilteredDates = malloc(maxDates * sizeof(char*));
+    int numDates = getListOfDatesFromFile(unfilteredDates, biggestDateSize, smallestDateSize);
+
+    // write all unique dates to output file
+    writeUniqueElementsToOutputFile(unfilteredDates, numDates);
+    for (int i=0; i<numDates; i++)
+    {
+        free(unfilteredDates[i]);
+    }
+    free(unfilteredDates);
+    return 0;
+}
+
+
 /*
-* Basic function to get the size of a file in characters
+ * Read the file and return a list of strings, each string is a valid date.
+ * note: its unsorted and may contain duplicates, but each string is valid.
+ * 
+ * returns the number of dates found and fills the output array with the dates.
+ * The output array must be preallocated to hold enough strings.
 */
-long getFileSize()
+int getListOfDatesFromFile(char** output, int biggestDateSize, int smallestDateSize)
 {
     FILE* file = fopen(inputFile, "r");
-    fseek(file, 0, SEEK_END);
-    long size = ftell(file);
-    fclose(file);
-    return size;
-}
-
-/*
- * This is a helper function for qsort to compare two strings
- */
-int compareStrings(const void *a, const void *b) {
-    const char **str1 = (const char **)a;
-    const char **str2 = (const char **)b;
-    return strcmp(*str1, *str2);
-}
-
-/*
- * this will write all unique elements to the output file
- */
-void writeUniqueElementsToOutputFile(char** elements, int numElements)
-{
-    qsort(elements, numElements, sizeof(char*), compareStrings);
-    FILE* file = fopen(outputFile, "w");
-    for (int i=0; i<numElements; i++)
+    char character;
+    char lastChar = '\0';
+    int index = 0;
+    int currentDateIndex = 0;
+    char* currentDate = malloc(biggestDateSize);
+    while ((character = fgetc(file)) != EOF)
     {
-        if(i>0 && strcmp(elements[i], elements[i-1])==0)
+        if(checkCharValidForIndex(character, index, lastChar))
         {
-            // Duplicate, skip
-            continue;
+            currentDate[index] = character;
+            // Valid character for this position
+            lastChar = character;
+            index++;
+            if(index==biggestDateSize || (index ==  smallestDateSize && lastChar == 'Z')) // Reached end of longest possible date
+            {   
+                currentDate[index] = '\0'; // Null terminate the string
+                output[currentDateIndex] = malloc(biggestDateSize);
+                sprintf(output[currentDateIndex], "%s", currentDate); // Store date in output array
+                index=0;
+                currentDateIndex++;
+                lastChar='\0';
+                // Store date in output array
+            }
         }
-        fprintf(file, "%s\n", elements[i]);
+        else
+        {
+            // Invalid character for this position
+            index=0;
+            lastChar='\0';
+            if(checkCharValidForIndex(character, index, lastChar)) // Check if this character can be the start of a new date
+            {
+                lastChar = character;
+                index++;
+            }
+        }
+        // Process character
     }
+    free(currentDate);
     fclose(file);
+    return currentDateIndex; // Return number of dates found
 }
 
 
@@ -189,76 +224,43 @@ bool checkCharValidForIndex(char c, int index, char lastChar)
 }
 
 
+/*
+ * When passed an array of strings this will write all unique elements to the output file
+ * numElements is the size the array
+ */
+void writeUniqueElementsToOutputFile(char** elements, int numElements)
+{
+    qsort(elements, numElements, sizeof(char*), compareStrings);
+    FILE* file = fopen(outputFile, "w");
+    for (int i=0; i<numElements; i++)
+    {
+        if(i>0 && strcmp(elements[i], elements[i-1])==0)
+        {
+            // Duplicate, skip
+            continue;
+        }
+        fprintf(file, "%s\n", elements[i]);
+    }
+    fclose(file);
+}
 
 /*
- * Read the file and return a list of strings, each string is a valid date.
- * note: its unsorted and may contain duplicates, but each string is valid.
- * 
- * returns the number of dates found and fills the output array with the dates.
- * The output array must be preallocated to hold enough strings.
+* This is a helper function to get the size of a file in characters
 */
-int getListOfDatesFromFile(char** output, int biggestDateSize, int smallestDateSize)
+long getFileSize()
 {
     FILE* file = fopen(inputFile, "r");
-    char character;
-    char lastChar = '\0';
-    int index = 0;
-    int currentDateIndex = 0;
-    char* currentDate = malloc(biggestDateSize);
-    while ((character = fgetc(file)) != EOF)
-    {
-        if(checkCharValidForIndex(character, index, lastChar))
-        {
-            currentDate[index] = character;
-            // Valid character for this position
-            lastChar = character;
-            index++;
-            if(index==biggestDateSize || (index ==  smallestDateSize && lastChar == 'Z')) // Reached end of longest possible date
-            {   
-                currentDate[index] = '\0'; // Null terminate the string
-                output[currentDateIndex] = malloc(biggestDateSize);
-                sprintf(output[currentDateIndex], "%s", currentDate); // Store date in output array
-                index=0;
-                currentDateIndex++;
-                lastChar='\0';
-                // Store date in output array
-            }
-        }
-        else
-        {
-            // Invalid character for this position
-            index=0;
-            lastChar='\0';
-            if(checkCharValidForIndex(character, index, lastChar)) // Check if this character can be the start of a new date
-            {
-                lastChar = character;
-                index++;
-            }
-        }
-        // Process character
-    }
-    free(currentDate);
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
     fclose(file);
-    return currentDateIndex; // Return number of dates found
+    return size;
 }
- 
-int main(int arc, char *argv[]) {
-    // Basic preprocessing 
-    long fileSize = getFileSize();
-    int biggestDateSize = strlen(inputFormatLong);
-    int smallestDateSize = strlen(inputFormatShort);
-    int maxDates = fileSize / smallestDateSize; // Worst case every date is the smallest size
 
-    // Create an array of all dates that fit date format
-    char** unfilteredDates = malloc(maxDates * sizeof(char*));
-    int numDates = getListOfDatesFromFile(unfilteredDates, biggestDateSize, smallestDateSize);
-
-    // write all unique dates to output file
-    writeUniqueElementsToOutputFile(unfilteredDates, numDates);
-    for (int i=0; i<numDates; i++)
-    {
-        free(unfilteredDates[i]);
-    }
-    free(unfilteredDates);
-    return 0;
+/*
+ * This is a helper function for qsort to compare two strings
+ */
+int compareStrings(const void *a, const void *b) {
+    const char **str1 = (const char **)a;
+    const char **str2 = (const char **)b;
+    return strcmp(*str1, *str2);
 }
